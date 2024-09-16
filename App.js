@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Image, Alert } from 'react-native';
-import { auth } from './src/firebaseConnection';
+import { auth, db } from './src/firebaseConnection';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { FormUsers } from './src/FormUsers';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
           email: user.email,
           uid: user.uid
         });
+        checkAdmin(user.uid); // Check if the user is an admin
         setLoading(false);
         return;
       }
@@ -30,6 +32,22 @@ export default function App() {
     });
     return () => unsub();
   }, []);
+
+  const checkAdmin = async (uid) => {
+    try {
+      const docRef = doc(db, "adm", "1"); // Get the admin document
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const adminData = docSnap.data();
+        if (adminData.uid === uid && adminData.IsAdm) {
+          Alert.alert("Acesso Administrativo", "Você é um administrador!");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar administrador:", error);
+    }
+  };
 
   async function handleCreateUser() {
     if (!fullName || !birthDate || !email || !password || !confirmPassword) {

@@ -15,14 +15,30 @@ export function FormUsers() {
   const [eletrico, setEletrico] = useState(false);
 
   const [users, setUsers] = useState([]);
-  const [showForm, setShowForm] = useState(false); // Inicialmente o formulário está oculto
+  const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState("");
-  const [loading, setLoading] = useState(false); // Estado de carregamento
+  const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [carDetails, setCarDetails] = useState([]);
 
   const user = auth.currentUser;
 
   useEffect(() => {
     if (!user) return;
+
+    async function checkAdmin() {
+      const admRef = collection(db, "adm");
+      const q = query(admRef, where("uid", "==", user.uid));
+      onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            setIsAdmin(data.IsAdm);
+          });
+        }
+      });
+    }
 
     async function getDados() {
       setLoading(true);
@@ -37,7 +53,8 @@ export function FormUsers() {
             marca: doc.data().marca,
             placa: doc.data().placa,
             carroceria: doc.data().carroceria,
-            eletrico: doc.data().eletrico
+            eletrico: doc.data().eletrico,
+            expirationTime: doc.data().expirationTime // Adicionando expirationTime aqui
           });
         });
         setUsers(lista);
@@ -45,7 +62,9 @@ export function FormUsers() {
       });
     }
 
+    checkAdmin();
     getDados();
+
   }, [user]);
 
   function resetForm() {
@@ -74,7 +93,8 @@ export function FormUsers() {
       placa: placa,
       carroceria: carroceria,
       eletrico: eletrico ? "Sim" : "Não",
-      uid: user.uid
+      uid: user.uid,
+
     })
     .then(() => {
       console.log("CADASTRADO COM SUCESSO");
@@ -124,7 +144,34 @@ export function FormUsers() {
     setLoading(true);
     await signOut(auth);
     setLoading(false); // Termina a animação de carregamento
-  } 
+  }
+
+  async function handleSearch() {
+    setLoading(true);
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("placa", "==", searchQuery));
+    onSnapshot(q, (snapshot) => {
+      let lista = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const currentTime = new Date().getTime();
+        const expirationTime = data.expirationTime || 0;
+        const remainingTime = expirationTime - currentTime;
+        lista.push({
+          id: doc.id,
+          modelo: data.modelo,
+          marca: data.marca,
+          placa: data.placa,
+          carroceria: data.carroceria,
+          eletrico: data.eletrico,
+          expirationTime: data.expirationTime,
+          remainingTime
+        });
+      });
+      setCarDetails(lista);
+      setLoading(false);
+    });
+  }
 
   function editUser(data) {
     setModelo(data.modelo);
@@ -136,6 +183,14 @@ export function FormUsers() {
     setShowForm(true); // Exibe o formulário quando um item é editado
   }
 
+  const formatRemainingTime = (remainingTime) => {
+    const totalSegundos = Math.floor(remainingTime / 1000);
+    const horas = Math.floor(totalSegundos / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
+    return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -144,13 +199,49 @@ export function FormUsers() {
         </View>
       )}
 
-      {!showForm && !loading && (
+      {isAdmin && (
+        <View>
+          <Text style={styles.label}>Pesquisar Placa:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite a placa do carro..."
+            value={searchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleSearch}>
+            <Text style={styles.buttonText}>Pesquisar</Text>
+          </TouchableOpacity>
+
+          {carDetails.length > 0 && (
+            <FlatList
+              data={carDetails}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={({ item }) => (
+                <View style={styles.item}>
+                  <Text>{`Modelo: ${item.modelo}`}</Text>
+                  <Text>{`Marca: ${item.marca}`}</Text>
+                  <Text>{`Placa: ${item.placa}`}</Text>
+                  <Text>{`Carroceria: ${item.carroceria}`}</Text>
+                  <Text>{`Elétrico: ${item.eletrico}`}</Text>
+                  {item.remainingTime > 0 ? (
+                    <Text>{`Tempo Restante: ${formatRemainingTime(item.remainingTime)}`}</Text>
+                  ) : (
+                    <Text>Este carro não está mais alugado.</Text>
+                  )}
+                </View>
+              )}
+            />
+          )}
+        </View>
+      )}
+
+      {!showForm && !loading && !isAdmin && (
         <TouchableOpacity onPress={() => setShowForm(true)} style={styles.button}>
           <Text style={styles.buttonText}>Cadastrar Carro</Text>
         </TouchableOpacity>
       )}
 
-      {showForm && (
+      {showForm && !isAdmin && (
         <View>
           <Text style={styles.label}>Modelo:</Text>
           <TextInput
@@ -210,14 +301,12 @@ export function FormUsers() {
             </TouchableOpacity>
           )}
 
-          {/* Botão para limpar o formulário, aparece apenas se o formulário estiver preenchido */}
           {isFormFilled() && (
             <TouchableOpacity style={styles.buttonClear} onPress={resetForm}>
               <Text style={styles.buttonText}>Limpar Formulário</Text>
             </TouchableOpacity>
           )}
 
-          {/* Botão para fechar o formulário */}
           <TouchableOpacity onPress={() => setShowForm(false)} style={styles.button}>
             <Text style={styles.buttonText}>Fechar formulário</Text>
           </TouchableOpacity>
@@ -242,12 +331,15 @@ export function FormUsers() {
               />
             )}
           />
-
-          <TouchableOpacity onPress={handleLogout} style={styles.buttonLogout}>
-            <Text style={{ color: "#FFF" }}>Sair da conta</Text>
-          </TouchableOpacity>
         </>
       )}
+
+      {/* Botão de Logout fixo na parte inferior */}
+      <View style={styles.logoutContainer}>
+        <TouchableOpacity style={styles.buttonLogout} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -317,11 +409,18 @@ const styles = StyleSheet.create({
   },
   buttonLogout: {
     backgroundColor: "#dc3545",
-    marginTop: 8,
-    marginLeft: 8,
-    marginRight: 8,
     borderRadius: 4,
     padding: 10,
+  },
+  logoutContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
   },
   loadingContainer: {
     flex: 1,
@@ -333,5 +432,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  item: {
+    padding: 10,
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
   }
 });
