@@ -12,10 +12,30 @@ export default function App() {
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-
   const [authUser, setAuthUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+// Função para formatar a data de nascimento
+const formatDate = (text) => {
+  // Remove todos os caracteres não numéricos
+  let cleaned = text.replace(/\D/g, '');
 
+  // Adiciona a formatação
+  if (cleaned.length <= 2) {
+    return cleaned;
+  } else if (cleaned.length <= 4) {
+    return cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+  } else if (cleaned.length <= 8) {
+    return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4);
+  } else {
+    return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+  }
+};
+
+// Manipulador de mudança para o campo de data de nascimento
+const handleBirthDateChange = (text) => {
+  setBirthDate(formatDate(text));
+};
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -24,18 +44,18 @@ export default function App() {
           uid: user.uid
         });
         checkAdmin(user.uid); // Check if the user is an admin
-        setLoading(false);
-        return;
+      } else {
+        setAuthUser(null);
       }
-      setAuthUser(null);
       setLoading(false);
     });
+
     return () => unsub();
   }, []);
 
   const checkAdmin = async (uid) => {
     try {
-      const docRef = doc(db, "adm", "1"); // Get the admin document
+      const docRef = doc(db, "adm", "1"); // Adjust this if necessary for your admin document
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -49,7 +69,7 @@ export default function App() {
     }
   };
 
-  async function handleCreateUser() {
+  const handleCreateUser = async () => {
     if (!fullName || !birthDate || !email || !password || !confirmPassword) {
       Alert.alert("Erro", "Por favor, preencha todos os campos.");
       return;
@@ -72,9 +92,9 @@ export default function App() {
       console.error("Error creating user:", error);
       Alert.alert("Erro", "Erro ao criar conta. Verifique se o email já está em uso.");
     }
-  }
+  };
 
-  function handleLogin() {
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert("Erro", "Por favor, preencha todos os campos.");
       return;
@@ -99,12 +119,12 @@ export default function App() {
         }
         console.error(err.code);
       });
-  }
+  };
 
-  async function handleLogout() {
+  const handleLogout = async () => {
     await signOut(auth);
     setAuthUser(null);
-  }
+  };
 
   if (authUser) {
     return (
@@ -126,7 +146,9 @@ export default function App() {
         style={styles.input}
         placeholder="Digite seu email..."
         value={email}
-        onChangeText={(text) => setEmail(text)}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <Text style={styles.label}>Senha:</Text>
@@ -134,7 +156,7 @@ export default function App() {
         style={styles.input}
         placeholder="Digite sua senha..."
         value={password}
-        onChangeText={(text) => setPassword(text)}
+        onChangeText={setPassword}
         secureTextEntry={true}
       />
 
@@ -167,28 +189,31 @@ export default function App() {
               style={styles.modalInput}
               placeholder="Nome completo"
               value={fullName}
-              onChangeText={(text) => setFullName(text)}
+              onChangeText={setFullName}
             />
 
             <TextInput
               style={styles.modalInput}
               placeholder="Data de nascimento (DD/MM/AAAA)"
               value={birthDate}
-              onChangeText={(text) => setBirthDate(text)}
+              onChangeText={handleBirthDateChange}
+              keyboardType="numeric"
             />
 
             <TextInput
               style={styles.modalInput}
               placeholder="Email"
               value={email}
-              onChangeText={(text) => setEmail(text)}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
 
             <TextInput
               style={styles.modalInput}
               placeholder="Senha"
               value={password}
-              onChangeText={(text) => setPassword(text)}
+              onChangeText={setPassword}
               secureTextEntry={true}
             />
 
@@ -196,7 +221,7 @@ export default function App() {
               style={styles.modalInput}
               placeholder="Confirme a senha"
               value={confirmPassword}
-              onChangeText={(text) => setConfirmPassword(text)}
+              onChangeText={setConfirmPassword}
               secureTextEntry={true}
             />
 

@@ -1,8 +1,7 @@
-
 import { initializeApp } from "firebase/app";
-import { getFirestore } from 'firebase/firestore'
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getFirestore } from 'firebase/firestore';
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import * as SecureStore from 'expo-secure-store';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlJQODT8nbeycOADSDK81Sjy0l92_zvi8",
@@ -14,14 +13,15 @@ const firebaseConfig = {
   measurementId: "G-MELE4590GB"
 };
 
-
+// Inicializa o app Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app)
 
+// Inicializa o Firestore
+const db = getFirestore(app);
+
+// Inicializa o Auth com Expo SecureStore para persistência
 const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-})
-
-
+  persistence: getReactNativePersistence(SecureStore)
+});
 
 export { db, auth };

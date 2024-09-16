@@ -2,14 +2,18 @@ import { View, StyleSheet, Text, TouchableOpacity, Modal, Button } from 'react-n
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebaseConnection';
 import { deleteDoc, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { format } from 'date-fns'; // Para formatar a data
 
 export function UsersList({ data, handleEdit, handleDelete }) {
   const user = auth.currentUser;
   const [modalVisible, setModalVisible] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
   const [hours, setHours] = useState(0);
   const [calculatedCost, setCalculatedCost] = useState(null);
   const [expirationTime, setExpirationTime] = useState(data.expirationTime || 0);
+  const [receiptData, setReceiptData] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState(''); // Estado para o método de pagamento
 
   useEffect(() => {
     const docRef = doc(db, "users", data.id);
@@ -17,6 +21,9 @@ export function UsersList({ data, handleEdit, handleDelete }) {
       const userData = doc.data();
       if (userData && userData.expirationTime) {
         setExpirationTime(userData.expirationTime);
+        if (userData.receipt) {
+          setReceiptData(userData.receipt);
+        }
       }
     });
 
@@ -24,7 +31,6 @@ export function UsersList({ data, handleEdit, handleDelete }) {
   }, [data.id]);
 
   useEffect(() => {
-    let intervalId;
     const checkExpiration = () => {
       const currentTime = new Date().getTime();
       if (expirationTime > currentTime) {
@@ -36,7 +42,7 @@ export function UsersList({ data, handleEdit, handleDelete }) {
 
     checkExpiration();
 
-    return () => clearInterval(intervalId);
+    return () => clearTimeout();
   }, [expirationTime]);
 
   const calculateCost = (carroceria, eletrico, hours) => {
@@ -78,15 +84,35 @@ export function UsersList({ data, handleEdit, handleDelete }) {
   };
 
   const handleConfirmPayment = async () => {
+    if (!paymentMethod) {
+      alert("Por favor, selecione um método de pagamento.");
+      return;
+    }
+
     const currentTime = new Date().getTime();
     const tempoEmMilissegundos = hours * 60 * 60 * 1000;
     const novoTempoExpiracao = currentTime + tempoEmMilissegundos;
 
+    // Dados do comprovante
+    const receipt = {
+      modelo: data.modelo,
+      marca: data.marca,
+      placa: data.placa,
+      carroceria: data.carroceria,
+      eletrico: data.eletrico,
+      custo: calculatedCost.toFixed(2),
+      horaCompra: format(new Date(currentTime), 'dd/MM/yyyy HH:mm:ss'),
+      horaSaida: format(new Date(novoTempoExpiracao), 'dd/MM/yyyy HH:mm:ss'),
+      metodoPagamento: paymentMethod, // Inclui o método de pagamento
+    };
+
     await updateDoc(doc(db, "users", data.id), {
-      expirationTime: novoTempoExpiracao
+      expirationTime: novoTempoExpiracao,
+      receipt: receipt
     });
 
     setExpirationTime(novoTempoExpiracao);
+    setReceiptData(receipt);
     setPaymentModalVisible(false);
     setModalVisible(false);
   };
@@ -98,6 +124,10 @@ export function UsersList({ data, handleEdit, handleDelete }) {
 
   const handleEditUser = () => {
     handleEdit(data);
+  };
+
+  const handleViewReceipt = () => {
+    setReceiptModalVisible(true);
   };
 
   return (
@@ -138,12 +168,25 @@ export function UsersList({ data, handleEdit, handleDelete }) {
         <Text style={styles.buttonText}>Usar essa placa</Text>
       </TouchableOpacity>
 
+      {expirationTime > new Date().getTime() && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleViewReceipt}
+        >
+          <Text style={styles.buttonText}>Comprovante</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Modal para calcular e comprar */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(!modalVisible)}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+          setCalculatedCost(null);
+          setHours(0);
+        }}
       >
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Quantas horas deseja estacionar?</Text>
@@ -170,14 +213,11 @@ export function UsersList({ data, handleEdit, handleDelete }) {
             </>
           )}
 
-          <Button
-            title="Fechar"
-            onPress={() => {
-              setModalVisible(!modalVisible);
-              setCalculatedCost(null);
-              setHours(0);
-            }}
-          />
+          <Button title="Fechar" onPress={() => {
+            setModalVisible(!modalVisible);
+            setCalculatedCost(null);
+            setHours(0);
+          }} />
         </View>
       </Modal>
 
@@ -197,9 +237,64 @@ export function UsersList({ data, handleEdit, handleDelete }) {
           <Text>Elétrico: {data.eletrico}</Text>
           <Text>Total: R$ {calculatedCost?.toFixed(2)}</Text>
 
-          <Button title="Confirmar Pagamento" onPress={handleConfirmPayment} />
+          {/* Botões para selecionar o método de pagamento */}
+          <View style={styles.paymentOptions}>
+            <TouchableOpacity
+              style={[styles.paymentButton, paymentMethod === 'Cartão de crédito' && styles.selectedPayment]}
+              onPress={() => setPaymentMethod('Cartão de crédito')}
+            >
+              <Text style={styles.paymentButtonText}>Cartão de Crédito</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentButton, paymentMethod === 'Pix' && styles.selectedPayment]}
+              onPress={() => setPaymentMethod('Pix')}
+            >
+              <Text style={styles.paymentButtonText}>Pix</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentButton, paymentMethod === 'Cartão de débito' && styles.selectedPayment]}
+              onPress={() => setPaymentMethod('Cartão de débito')}
+            >
+              <Text style={styles.paymentButtonText}>Cartão de Débito</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Button 
+            title="Confirmar Pagamento" 
+            onPress={handleConfirmPayment} 
+            disabled={!paymentMethod} // Desabilita se nenhum método estiver selecionado
+          />
 
           <Button title="Fechar" onPress={() => setPaymentModalVisible(false)} />
+        </View>
+      </Modal>
+
+      {/* Modal para comprovante */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={receiptModalVisible}
+        onRequestClose={() => setReceiptModalVisible(!receiptModalVisible)}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Comprovante de Aluguel</Text>
+          {receiptData ? (
+            <>
+              <Text>Modelo: {receiptData.modelo}</Text>
+              <Text>Marca: {receiptData.marca}</Text>
+              <Text>Placa: {receiptData.placa}</Text>
+              <Text>Carroceria: {receiptData.carroceria}</Text>
+              <Text>Elétrico: {receiptData.eletrico}</Text>
+              <Text>Custo: R$ {receiptData.custo}</Text>
+              <Text>Hora da Compra: {receiptData.horaCompra}</Text>
+              <Text>Hora de Saída: {receiptData.horaSaida}</Text>
+              <Text>Método de Pagamento: {receiptData.metodoPagamento}</Text>
+            </>
+          ) : (
+            <Text>Nenhum comprovante disponível.</Text>
+          )}
+
+          <Button title="Fechar" onPress={() => setReceiptModalVisible(false)} />
         </View>
       </Modal>
     </View>
@@ -288,5 +383,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 18,
     fontWeight: "bold",
+  },
+  paymentOptions: {
+    marginTop: 20,
+    width: '100%',
+  },
+  paymentButton: {
+    backgroundColor: '#e0e0e0',
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+    alignItems: 'center',
+  },
+  paymentButtonText: {
+    fontSize: 16,
+  },
+  selectedPayment: {
+    backgroundColor: '#007BFF',
+    color: '#FFF',
   },
 });

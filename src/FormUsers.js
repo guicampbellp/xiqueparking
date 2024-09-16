@@ -5,7 +5,8 @@ import { doc, onSnapshot, addDoc, updateDoc, deleteDoc, collection, query, where
 import { signOut } from 'firebase/auth';
 import { UsersList } from './users';
 import { Picker } from '@react-native-picker/picker';
-import CheckBox from '@react-native-community/checkbox';
+import CheckBox from 'expo-checkbox';
+import axios from 'axios';
 
 export function FormUsers() {
   const [modelo, setModelo] = useState("");
@@ -21,8 +22,67 @@ export function FormUsers() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [carDetails, setCarDetails] = useState([]);
+  const [apiMarca, setApiMarca] = useState([]);
+  const [filteredMarca, setFilteredMarca] = useState([]);
+  const [modelos, setModelos] = useState([]);
+  const [filteredModelos, setFilteredModelos] = useState([]);
 
   const user = auth.currentUser;
+
+  useEffect(() => {
+    const fetchMarcas = async () => {
+      try {
+        const response = await axios.get('https://parallelum.com.br/fipe/api/v1/carros/marcas');
+        setApiMarca(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar marcas:', error);
+      }
+    };
+    
+    fetchMarcas();
+  }, []);
+
+  useEffect(() => {
+    if (marca.length > 0) {
+      setLoading(true);
+      const filtered = apiMarca.filter(m => m.nome.toLowerCase().includes(marca.toLowerCase()));
+      setFilteredMarca(filtered);
+      setLoading(false);
+    } else {
+      setFilteredMarca([]);
+    }
+  }, [marca, apiMarca]);
+
+  useEffect(() => {
+    if (modelo.length > 0) {
+      const filtered = modelos.filter(m => m.nome.toLowerCase().includes(modelo.toLowerCase()));
+      setFilteredModelos(filtered);
+    } else {
+      setFilteredModelos([]);
+    }
+  }, [modelo, modelos]);
+
+  const handleMarcaSelect = async (selectedMarca) => {
+    setMarca(selectedMarca.nome);
+    setFilteredMarca([]);
+
+    try {
+      setLoading(true);
+      const response = await axios.get(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${selectedMarca.codigo}/modelos`);
+      setModelos(response.data.modelos);
+    } catch (error) {
+      console.error('Erro ao buscar modelos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModeloSelect = (selectedModelo) => {
+    setModelo(selectedModelo.nome);
+    setFilteredModelos([]);
+  };
+
+
 
   useEffect(() => {
     if (!user) return;
@@ -64,7 +124,6 @@ export function FormUsers() {
 
     checkAdmin();
     getDados();
-
   }, [user]);
 
   function resetForm() {
@@ -94,7 +153,6 @@ export function FormUsers() {
       carroceria: carroceria,
       eletrico: eletrico ? "Sim" : "Não",
       uid: user.uid,
-
     })
     .then(() => {
       console.log("CADASTRADO COM SUCESSO");
@@ -202,12 +260,12 @@ export function FormUsers() {
       {isAdmin && (
         <View>
           <Text style={styles.label}>Pesquisar Placa:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Digite a placa do carro..."
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
+            <TextInput
+              style={styles.input}
+              placeholder="Digite a placa do carro..."
+              value={searchQuery}
+              onChangeText={(text) => setSearchQuery(text.toUpperCase())} // Converte o texto para maiúsculas
+            />
           <TouchableOpacity style={styles.button} onPress={handleSearch}>
             <Text style={styles.buttonText}>Pesquisar</Text>
           </TouchableOpacity>
@@ -241,30 +299,54 @@ export function FormUsers() {
         </TouchableOpacity>
       )}
 
-      {showForm && !isAdmin && (
-        <View>
-          <Text style={styles.label}>Modelo:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Digite o modelo do carro..."
-            value={modelo}
-            onChangeText={(text) => setModelo(text)} 
+{showForm && !isAdmin && (
+        <View style={styles.formContainer}>
+        <Text style={styles.label}>Marca:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Digite a marca do carro..."
+          value={marca}
+          onChangeText={(text) => setMarca(text)}
+        />
+        {loading && <ActivityIndicator size="small" color="#0000ff" />}
+        {filteredMarca.length > 0 && (
+          <FlatList
+            data={filteredMarca}
+            keyExtractor={(item) => String(item.codigo)}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => handleMarcaSelect(item)}>
+                <Text>{item.nome}</Text>
+              </TouchableOpacity>
+            )}
           />
+        )}
 
-          <Text style={styles.label}>Marca:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Digite a marca do carro..."
-            value={marca}
-            onChangeText={(text) => setMarca(text)} 
+        <Text style={styles.label}>Modelo:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Digite o modelo do carro..."
+          value={modelo}
+          onChangeText={(text) => setModelo(text)}
+        />
+        {loading && <ActivityIndicator size="small" color="#0000ff" />}
+        {filteredModelos.length > 0 && (
+          <FlatList
+            data={filteredModelos}
+            keyExtractor={(item) => String(item.codigo)}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => handleModeloSelect(item)}>
+                <Text>{item.nome}</Text>
+              </TouchableOpacity>
+            )}
           />
+        )}
 
           <Text style={styles.label}>Placa:</Text>
           <TextInput
             style={styles.input}
             placeholder="Digite a placa do carro..."
             value={placa}
-            onChangeText={(text) => setPlaca(text)} 
+            onChangeText={(text) => setPlaca(text.toUpperCase())} 
           />
 
           <Text style={styles.label}>Carroceria:</Text>
@@ -273,6 +355,7 @@ export function FormUsers() {
             onValueChange={(itemValue) => setCarroceria(itemValue)}
             style={styles.picker}
           >
+            <Picker.Item label="Selecione uma carroceria" value="" />
             <Picker.Item label="Sub Compacto" value="Sub Compacto" />
             <Picker.Item label="Compacto" value="Compacto" />
             <Picker.Item label="Hatch" value="Hatch" />
@@ -334,7 +417,6 @@ export function FormUsers() {
         </>
       )}
 
-      {/* Botão de Logout fixo na parte inferior */}
       <View style={styles.logoutContainer}>
         <TouchableOpacity style={styles.buttonLogout} onPress={handleLogout}>
           <Text style={styles.buttonText}>Sair</Text>
@@ -383,6 +465,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
     padding: 8,
+    backgroundColor:"#fff",
   },
   picker: {
     marginLeft: 8,
