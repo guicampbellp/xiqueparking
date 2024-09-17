@@ -138,8 +138,8 @@ const handleBirthDateChange = (text) => {
     <View style={styles.container}>
       {loading && <Text style={styles.loadingText}>Carregando informações...</Text>}
 
-      <Image source={require('./assets/xique.png')} style={styles.logo} />
-      <Text style={styles.logoText}>XiqueParking</Text>
+      <Image source={require('./assets/logo.png')} style={styles.logo} />
+      <Text style={styles.logoText}>Park Now</Text>
 
       <Text style={styles.label}>Email:</Text>
       <TextInput
@@ -243,20 +243,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 40,
-    backgroundColor: "#FFA83F",
+    backgroundColor: "#f9f9f9",
     alignItems: 'center',
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 10,
-    marginTop: 20,
+    width: 200,
+    height: 200,
+    marginTop: -20,
   },
   logoText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
+    color: '#261419',
+    marginBottom: 10,
+    marginTop: -20,
   },
   input: {
     width: '90%',
@@ -266,13 +266,14 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 14,
     backgroundColor: '#fff',
+    placeholderTextColor: "#0101012",
   },
   button: {
-    backgroundColor: "#000",
+    backgroundColor: "#f25c05",
     width: '90%',
     padding: 12,
     borderRadius: 5,
-    marginBottom: 8,
+    marginBottom: 10,
     alignItems: 'center',
   },
   buttonText: {
@@ -288,10 +289,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: 'rgba(211, 211, 211, 0.5)',
   },
   modalView: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F9F9F9",
     borderRadius: 10,
     padding: 20,
     width: '90%',
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
+    color: "#261419",
   },
   modalInput: {
     width: '100%',
@@ -311,5 +312,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 14,
+    placeholderTextColor: "#0101012",
+  },
+  label: {
+    alignSelf: 'flex-start',
+    paddingLeft: '6%',
+    marginBottom: 10,
   },
 });

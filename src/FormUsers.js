@@ -398,8 +398,11 @@ export function FormUsers() {
 
       {!loading && (
         <>
-          <Text style={{ marginTop: 14, marginLeft: 8, fontSize: 20, color: "#000" }}>
-            Carros:
+          <Text style={{ marginTop: 14, marginLeft: 8, fontSize: 17, color: "#000" }}>
+            Olá
+          </Text>
+          <Text style={{ marginLeft: 8, fontSize: 20, color: "#f28705", fontWeight: 600, }}>
+            Usuário
           </Text>
 
           <FlatList
@@ -520,5 +523,5 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomColor: '#ccc',
     borderBottomWidth: 1,
-  }
+  },
 });

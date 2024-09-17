@@ -1,4 +1,4 @@
-import { View, StyleSheet, Text, TouchableOpacity, Modal, Button } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Modal, Button, Image } from 'react-native';
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebaseConnection';
 import { deleteDoc, doc, updateDoc, onSnapshot } from 'firebase/firestore';
@@ -132,11 +132,14 @@ export function UsersList({ data, handleEdit, handleDelete }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.item}>Modelo: {data.modelo}</Text>
-      <Text style={styles.item}>Marca: {data.marca}</Text>
-      <Text style={styles.item}>Placa: {data.placa}</Text>
-      <Text style={styles.item}>Carroceria: {data.carroceria}</Text>
-      <Text style={styles.item}>Elétrico: {data.eletrico}</Text>
+      <View style={styles.placa}>
+        <View style={styles.placaCima}>
+          <Image source={require('../assets/mercosul.png')} style={styles.bandeira} />
+          <Text style={{ color: '#fff', fontWeight: 600, }}>BRASIL</Text>
+          <Image source={require('../assets/br.png')} style={styles.bandeira} />
+        </View>
+        <Text style={{ color: '#000', fontWeight: 600, fontSize: 18, }}>{data.placa}</Text>
+      </View>
 
       {expirationTime > new Date().getTime() && (
         <Text style={styles.item}>
@@ -144,28 +147,31 @@ export function UsersList({ data, handleEdit, handleDelete }) {
         </Text>
       )}
 
-      <TouchableOpacity
-        style={[styles.button, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
-        onPress={expirationTime <= new Date().getTime() ? handleDeleteItem : null}
-        disabled={expirationTime > new Date().getTime()}
-      >
-        <Text style={styles.buttonText}>Deletar carro</Text>
-      </TouchableOpacity>
+      <View style={styles.boxBotaoPlaca}>
+        <TouchableOpacity
+          style={[styles.buttonFrontDell, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
+          onPress={expirationTime <= new Date().getTime() ? handleDeleteItem : null}
+          disabled={expirationTime > new Date().getTime()}
+        >
+          <Text style={styles.buttonText}>Deletar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.buttonFrontEdit, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
+          onPress={expirationTime <= new Date().getTime() ? handleEditUser : null}
+          disabled={expirationTime > new Date().getTime()}
+        >
+          <Text style={styles.buttonText}>Editar</Text>
+        </TouchableOpacity>
+      </View>
+      
 
       <TouchableOpacity
-        style={[styles.buttonEdit, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
-        onPress={expirationTime <= new Date().getTime() ? handleEditUser : null}
-        disabled={expirationTime > new Date().getTime()}
-      >
-        <Text style={styles.buttonText}>Editar carro</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.buttonUse, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
+        style={[styles.buttonUsePlaca, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
         onPress={expirationTime <= new Date().getTime() ? () => setModalVisible(true) : null}
         disabled={expirationTime > new Date().getTime()}
       >
-        <Text style={styles.buttonText}>Usar essa placa</Text>
+        <Text style={styles.buttonText}>Alugar Vaga</Text>
       </TouchableOpacity>
 
       {expirationTime > new Date().getTime() && (
@@ -277,24 +283,25 @@ export function UsersList({ data, handleEdit, handleDelete }) {
         onRequestClose={() => setReceiptModalVisible(!receiptModalVisible)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalText}>Comprovante de Aluguel</Text>
+          <Text style={styles.comprovTitulo}>Comprovante de Aluguel</Text>
           {receiptData ? (
             <>
-              <Text>Modelo: {receiptData.modelo}</Text>
-              <Text>Marca: {receiptData.marca}</Text>
-              <Text>Placa: {receiptData.placa}</Text>
-              <Text>Carroceria: {receiptData.carroceria}</Text>
-              <Text>Elétrico: {receiptData.eletrico}</Text>
-              <Text>Custo: R$ {receiptData.custo}</Text>
-              <Text>Hora da Compra: {receiptData.horaCompra}</Text>
-              <Text>Hora de Saída: {receiptData.horaSaida}</Text>
-              <Text>Método de Pagamento: {receiptData.metodoPagamento}</Text>
+              <Text style={styles.comprovText}>Modelo: {receiptData.modelo}</Text>
+              <Text style={styles.comprovText}>Marca: {receiptData.marca}</Text>
+              <Text style={styles.comprovText}>Placa: {receiptData.placa}</Text>
+              <Text style={styles.comprovText}>Carroceria: {receiptData.carroceria}</Text>
+              <Text style={styles.comprovText}>Elétrico: {receiptData.eletrico}</Text>
+              <Text style={styles.comprovText}>Custo: R$ {receiptData.custo}</Text>
+              <Text style={styles.comprovText}>Hora da Compra: {receiptData.horaCompra}</Text>
+              <Text style={styles.comprovText}>Hora de Saída: {receiptData.horaSaida}</Text>
+              <Text style={styles.comprovText}>Método de Pagamento: {receiptData.metodoPagamento}</Text>
             </>
           ) : (
-            <Text>Nenhum comprovante disponível.</Text>
+            <Text style={styles.comprovText}>Nenhum comprovante disponível.</Text>
           )}
-
-          <Button title="Fechar" onPress={() => setReceiptModalVisible(false)} />
+          <TouchableOpacity style={styles.button} title="Fechar" onPress={() => setReceiptModalVisible(false)}>
+            <Text style={styles.buttonText}>Fechar</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </View>
@@ -311,26 +318,55 @@ const formatarTempo = (tempoRestante) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#fff",
     padding: 8,
     borderRadius: 4,
+    alignItems: 'center',
     marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: {width: 2, height: 5},
+    shadowOpacity: 10,
+    shadowRadius: 4,
+    elevation: 3,
+    width: 300,
+  },
+  btnCarro: {
+    width: 70,
+    height: 70,
+    borderRadius: '50%',
+    fontSize: 19,
+    fontWeight: 600,
   },
   item: {
     color: "#000",
     fontSize: 16,
   },
-  button: {
-    backgroundColor: "#B3261E",
-    alignSelf: "flex-start",
-    padding: 4,
+  buttonFront: {
+    backgroundColor: "#f28705",
+    alignSelf: "center",
+    paddingTop: 10,
+    paddingLeft: 20,
+    paddingBottom: 10,
+    paddingRight: 20,
     borderRadius: 4,
-    marginTop: 16,
+    marginTop: 25,
+  },
+  buttonUsePlaca: {
+    backgroundColor: "#0037a8",
+    alignSelf: "center",
+    paddingTop: 10,
+    paddingLeft: 20,
+    paddingBottom: 10,
+    paddingRight: 20,
+    borderRadius: 4,
+    marginTop: 25,
+    width: '90%',
   },
   buttonText: {
-    color: "#FFF",
+    color: "#fff",
     paddingLeft: 8,
     paddingRight: 8,
+    textAlign: 'center',
   },
   buttonEdit: {
     backgroundColor: "#000",
@@ -347,11 +383,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   modalView: {
+    flex: 1,
+    alignItems: 'flex-start',
     margin: 20,
     backgroundColor: "white",
     borderRadius: 10,
     padding: 35,
-    alignItems: "center",
+    alignItems: "baseline",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -361,8 +399,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  comprovText: {
+    marginTop: 15,
+  },  
+  comprovTitulo :{
+    fontSize: 20,
+    color: '#261419',
+    marginBottom: 20,
+  },
+  fecharComprov: {
+    width: '90%',
+  },
   modalText: {
     marginBottom: 15,
+    marginTop: 15,
     textAlign: "center",
   },
   hourControl: {
@@ -402,4 +452,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#007BFF',
     color: '#FFF',
   },
+  placa: {
+    width: 200,
+    height: 55,
+    alignItems: 'center',
+    borderColor: '#000',
+    borderWidth: 2,
+    borderRadius: 4,
+    backgroundColor: '#fff',
+  },
+  placaCima: {
+    backgroundColor: '#0037a8',
+    width: '100%',
+    paddingTop: 2,
+    paddingRight: 3,
+    paddingLeft: 3,
+    paddingBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    color: 'white',
+    display: 'flex',
+    flexDirection: 'row',
+
+  },
+  bandeira: {
+    width: 30,
+    height: 20,
+    borderRadius: 2,
+  },
+  boxBotaoPlaca: {
+    display: 'flex',
+    flexDirection: 'row',
+  },
+  buttonFrontDell: {
+    backgroundColor: "#c20e0e",
+    alignSelf: "center",
+    paddingTop: 10,
+    paddingLeft: 20,
+    paddingBottom: 10,
+    paddingRight: 20,
+    borderRadius: 4,
+    marginTop: 25,
+    marginRight: 25,
+    width: '40%',
+  },
+  buttonFrontEdit: {
+    backgroundColor: "#f28705",
+    alignSelf: "center",
+    paddingTop: 10,
+    paddingLeft: 20,
+    paddingBottom: 10,
+    paddingRight: 20,
+    borderRadius: 4,
+    marginTop: 25,
+    width: '40%',
+  }
 });
