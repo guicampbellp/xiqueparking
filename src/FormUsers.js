@@ -26,6 +26,8 @@ export function FormUsers() {
   const [filteredMarca, setFilteredMarca] = useState([]);
   const [modelos, setModelos] = useState([]);
   const [filteredModelos, setFilteredModelos] = useState([]);
+  const [isSearchActive, setIsSearchActive] = useState(false); // Estado para controlar pesquisa ativa
+
 
   const user = auth.currentUser;
 
@@ -132,6 +134,7 @@ export function FormUsers() {
     setPlaca("");
     setCarroceria("");
     setEletrico(false);
+    setIsEditing("");
   }
 
   function isFormFilled() {
@@ -207,7 +210,7 @@ export function FormUsers() {
   async function handleSearch() {
     setLoading(true);
     const usersRef = collection(db, "users");
-    const q = query(usersRef, where("placa", "==", searchQuery));
+    const q = query(usersRef, where ("placa", "==", searchQuery));
     onSnapshot(q, (snapshot) => {
       let lista = [];
       snapshot.forEach((doc) => {
@@ -228,8 +231,15 @@ export function FormUsers() {
       });
       setCarDetails(lista);
       setLoading(false);
+      
     });
   }
+
+  function handleClearSearch() {
+    setSearchQuery("");
+    setCarDetails([]);
+  }
+  
 
   function editUser(data) {
     setModelo(data.modelo);
@@ -259,13 +269,18 @@ export function FormUsers() {
 
       {isAdmin && (
         <View>
-          <Text style={styles.label}>Pesquisar Placa:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite a placa do carro..."
-              value={searchQuery}
-              onChangeText={(text) => setSearchQuery(text.toUpperCase())} // Converte o texto para maiúsculas
-            />
+              <Text style={styles.label}>Pesquisar Placa:</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Digite a placa do carro..."
+      value={searchQuery}
+      onChangeText={(text) => {
+        setSearchQuery(text.toUpperCase()); // Converte o texto para maiúsculas
+        if (text.length === 0) {
+          handleClearSearch(); // Limpa os resultados quando o campo é limpo
+        }
+      }}
+    />
           <TouchableOpacity style={styles.button} onPress={handleSearch}>
             <Text style={styles.buttonText}>Pesquisar</Text>
           </TouchableOpacity>
@@ -293,13 +308,13 @@ export function FormUsers() {
         </View>
       )}
 
-      {!showForm && !loading && !isAdmin && (
+      {!showForm && !loading &&  (
         <TouchableOpacity onPress={() => setShowForm(true)} style={styles.button}>
           <Text style={styles.buttonText}>Cadastrar Carro</Text>
         </TouchableOpacity>
       )}
 
-{showForm && !isAdmin && (
+{showForm && (
         <View style={styles.formContainer}>
         <Text style={styles.label}>Marca:</Text>
         <TextInput
@@ -384,15 +399,13 @@ export function FormUsers() {
             </TouchableOpacity>
           )}
 
-          {isFormFilled() && (
-            <TouchableOpacity style={styles.buttonClear} onPress={resetForm}>
-              <Text style={styles.buttonText}>Limpar Formulário</Text>
-            </TouchableOpacity>
-          )}
 
-          <TouchableOpacity onPress={() => setShowForm(false)} style={styles.button}>
-            <Text style={styles.buttonText}>Fechar formulário</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              resetForm(); // Limpa o formulário e reseta o estado de edição
+              setShowForm(false); // Fecha o formulário
+            }} style={styles.button}>
+              <Text style={styles.buttonText}>Fechar formulário</Text>
+            </TouchableOpacity>
         </View>
       )}
 

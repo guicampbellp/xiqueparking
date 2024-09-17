@@ -134,7 +134,7 @@ export function UsersList({ data, handleEdit, handleDelete }) {
     <View style={styles.container}>
       <View style={styles.placa}>
         <View style={styles.placaCima}>
-          <Image source={require('../assets/mercosul.png')} style={styles.bandeira} />
+          <Image source={require('../assets/mercosul-Photoroom.png')} style={styles.bandeira} />
           <Text style={{ color: '#fff', fontWeight: 600, }}>BRASIL</Text>
           <Image source={require('../assets/br.png')} style={styles.bandeira} />
         </View>
@@ -363,6 +363,7 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   buttonText: {
+    backgroundColor:'#000',
     color: "#fff",
     paddingLeft: 8,
     paddingRight: 8,
