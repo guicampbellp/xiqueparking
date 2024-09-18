@@ -104,6 +104,7 @@ export function UsersList({ data, handleEdit, handleDelete }) {
       horaCompra: format(new Date(currentTime), 'dd/MM/yyyy HH:mm:ss'),
       horaSaida: format(new Date(novoTempoExpiracao), 'dd/MM/yyyy HH:mm:ss'),
       metodoPagamento: paymentMethod, // Inclui o método de pagamento
+      uid: data.id,
     };
 
     await updateDoc(doc(db, "users", data.id), {
@@ -135,18 +136,17 @@ export function UsersList({ data, handleEdit, handleDelete }) {
       <View style={styles.placa}>
         <View style={styles.placaCima}>
           <Image source={require('../assets/mercosul-Photoroom.png')} style={styles.bandeira} />
-          <Text style={{ color: '#fff', fontWeight: 600, }}>BRASIL</Text>
+          <Text style={{ color: '#fff', fontWeight: '600', }}>BRASIL</Text>
           <Image source={require('../assets/br.png')} style={styles.bandeira} />
         </View>
-        <Text style={{ color: '#000', fontWeight: 600, fontSize: 18, }}>{data.placa}</Text>
+        <Text style={{ color: '#000', fontWeight: '600', fontSize: 18, }}>{data.placa}</Text>
       </View>
 
       {expirationTime > new Date().getTime() && (
-        <Text style={styles.item}>
+        <Text style={{paddingTop: 10, color: 'green',}}>
           Tempo Restante: {formatarTempo(expirationTime - new Date().getTime())}
         </Text>
       )}
-
       <View style={styles.boxBotaoPlaca}>
         <TouchableOpacity
           style={[styles.buttonFrontDell, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
@@ -164,7 +164,7 @@ export function UsersList({ data, handleEdit, handleDelete }) {
           <Text style={styles.buttonText}>Editar</Text>
         </TouchableOpacity>
       </View>
-      
+
 
       <TouchableOpacity
         style={[styles.buttonUsePlaca, { opacity: expirationTime > new Date().getTime() ? 0.5 : 1 }]}
@@ -176,7 +176,7 @@ export function UsersList({ data, handleEdit, handleDelete }) {
 
       {expirationTime > new Date().getTime() && (
         <TouchableOpacity
-          style={styles.button}
+          style={styles.buttonComprovante}
           onPress={handleViewReceipt}
         >
           <Text style={styles.buttonText}>Comprovante</Text>
@@ -194,36 +194,50 @@ export function UsersList({ data, handleEdit, handleDelete }) {
           setHours(0);
         }}
       >
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>Quantas horas deseja estacionar?</Text>
-
+        <View style={styles.modalHoras}>
+          <View style={{ justifyContent: 'flex-start', width: '90%', }}>
+            <Text style={{ marginLeft: 8, fontSize: 28, color: "#f28705", fontWeight: '600', }}>
+              Calcular Horário
+            </Text>
+            <Text style={{ marginLeft: 8, marginTop: 8, marginBottom: 20, fontSize: 15, color: "gray" }}>
+              De quantas horas precisa?
+            </Text>
+          </View>
           {/* Controle de horas com botões + e - */}
           <View style={styles.hourControl}>
             <TouchableOpacity style={styles.hourButton} onPress={() => setHours(prev => Math.max(prev - 1, 0))}>
-              <Text style={styles.buttonText}>-</Text>
+              <Text style={styles.buttonTextHour}>-</Text>
             </TouchableOpacity>
 
             <Text style={styles.hourDisplay}>{hours}</Text>
 
             <TouchableOpacity style={styles.hourButton} onPress={() => setHours(prev => prev + 1)}>
-              <Text style={styles.buttonText}>+</Text>
+              <Text style={styles.buttonTextHour}>+</Text>
             </TouchableOpacity>
           </View>
 
-          <Button title="Calcular Custo" onPress={handleCalculateCost} />
+          <TouchableOpacity style={styles.buttonConfirmar} onPress={handleCalculateCost}>
+            <Text style={styles.buttonTextCalcular}>Calcular Custo</Text>
+          </TouchableOpacity>
 
           {calculatedCost !== null && (
             <>
-              <Text style={styles.result}>Custo total: R$ {calculatedCost.toFixed(2)}</Text>
-              <Button title="Comprar" onPress={handlePurchase} />
+              <View style={styles.boxResult}>
+                <Text style={styles.resultTotal}>Custo total: R$ {calculatedCost.toFixed(2)}</Text>
+              </View>
+              <TouchableOpacity style={styles.buttonComprar} onPress={handlePurchase} >
+                <Text style={styles.buttonTextCalcular}>Comprar</Text>
+              </TouchableOpacity>
             </>
           )}
 
-          <Button title="Fechar" onPress={() => {
+          <TouchableOpacity style={styles.buttonFechar} onPress={() => {
             setModalVisible(!modalVisible);
             setCalculatedCost(null);
             setHours(0);
-          }} />
+          }}>
+            <Text style={styles.buttonTextCalcular}>Fechar</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -235,43 +249,58 @@ export function UsersList({ data, handleEdit, handleDelete }) {
         onRequestClose={() => setPaymentModalVisible(!paymentModalVisible)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalText}>Confirme o pagamento</Text>
-          <Text>Modelo: {data.modelo}</Text>
-          <Text>Marca: {data.marca}</Text>
-          <Text>Placa: {data.placa}</Text>
-          <Text>Carroceria: {data.carroceria}</Text>
-          <Text>Elétrico: {data.eletrico}</Text>
-          <Text>Total: R$ {calculatedCost?.toFixed(2)}</Text>
+          <View style={{ justifyContent: 'flex-start', width: '90%', }}>
+            <Text style={{ marginLeft: 8, fontSize: 28, color: "#f28705", fontWeight: '600', }}>
+              Revisão
+            </Text>
+            <Text style={{ marginLeft: 8, marginTop: 2, marginBottom: 20, fontSize: 15, color: "gray" }}>
+              Confirme o Pagamento
+            </Text>
+          </View>
+          <Text style={styles.modalPalavra}>Modelo: {data.modelo}</Text>
+          <Text style={styles.modalPalavra}>Marca: {data.marca}</Text>
+          <Text style={styles.modalPalavra}>Placa: {data.placa}</Text>
+          <Text style={styles.modalPalavra}>Carroceria: {data.carroceria}</Text>
+          <Text style={styles.modalPalavra}>Elétrico: {data.eletrico}</Text>
+          <Text style={styles.modalPalavra}>Total: R$ {calculatedCost?.toFixed(2)}</Text>
 
           {/* Botões para selecionar o método de pagamento */}
           <View style={styles.paymentOptions}>
-            <TouchableOpacity
-              style={[styles.paymentButton, paymentMethod === 'Cartão de crédito' && styles.selectedPayment]}
-              onPress={() => setPaymentMethod('Cartão de crédito')}
-            >
-              <Text style={styles.paymentButtonText}>Cartão de Crédito</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.paymentButton, paymentMethod === 'Pix' && styles.selectedPayment]}
-              onPress={() => setPaymentMethod('Pix')}
-            >
-              <Text style={styles.paymentButtonText}>Pix</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.paymentButton, paymentMethod === 'Cartão de débito' && styles.selectedPayment]}
-              onPress={() => setPaymentMethod('Cartão de débito')}
-            >
-              <Text style={styles.paymentButtonText}>Cartão de Débito</Text>
-            </TouchableOpacity>
+            <View style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', }}>
+              <TouchableOpacity
+                style={[styles.paymentButton, paymentMethod === 'Cartão de crédito' && styles.selectedPayment]}
+                onPress={() => setPaymentMethod('Cartão de crédito')}
+              >
+                <Image source={require('../assets/cartao.png')} style={styles.bandeira} />
+                <Text style={styles.paymentButtonText}>Crédito</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.paymentButton, paymentMethod === 'Cartão de débito' && styles.selectedPayment]}
+                onPress={() => setPaymentMethod('Cartão de débito')}
+              >
+                <Image source={require('../assets/cartao.png')} style={styles.bandeira} />
+                <Text style={styles.paymentButtonText}>Débito</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.paymentButton, paymentMethod === 'Pix' && styles.selectedPayment]}
+                onPress={() => setPaymentMethod('Pix')}
+              >
+                <Image source={require('../assets/pix.png')} style={styles.bandeira} />
+                <Text style={styles.paymentButtonText}>Pix</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+          <TouchableOpacity
+            style={[styles.buttonPagamento, styles.confirmButtonPagamento, !paymentMethod && styles.disabledButtonPagamento]}
+            onPress={handleConfirmPayment}
+            disabled={!paymentMethod}
+          >
+            <Text style={styles.buttonTextPagamento}>Confirmar Pagamento</Text>
+          </TouchableOpacity>
 
-          <Button 
-            title="Confirmar Pagamento" 
-            onPress={handleConfirmPayment} 
-            disabled={!paymentMethod} // Desabilita se nenhum método estiver selecionado
-          />
-
-          <Button title="Fechar" onPress={() => setPaymentModalVisible(false)} />
+          <TouchableOpacity style={styles.buttonFecharRevisao}  onPress={() => setPaymentModalVisible(false)}>
+            <Text style={styles.buttonText}>Fechar</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -283,7 +312,14 @@ export function UsersList({ data, handleEdit, handleDelete }) {
         onRequestClose={() => setReceiptModalVisible(!receiptModalVisible)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.comprovTitulo}>Comprovante de Aluguel</Text>
+          <View style={{ justifyContent: 'flex-start', width: '90%', }}>
+            <Text style={{ marginLeft: 8, fontSize: 28, color: "#f28705", fontWeight: '600', }}>
+              Comprovante
+            </Text>
+            <Text style={{ marginLeft: 8, marginTop: 2, marginBottom: 20, fontSize: 15, color: "gray" }}>
+              Volte sempre!
+            </Text>
+          </View>
           {receiptData ? (
             <>
               <Text style={styles.comprovText}>Modelo: {receiptData.modelo}</Text>
@@ -295,11 +331,16 @@ export function UsersList({ data, handleEdit, handleDelete }) {
               <Text style={styles.comprovText}>Hora da Compra: {receiptData.horaCompra}</Text>
               <Text style={styles.comprovText}>Hora de Saída: {receiptData.horaSaida}</Text>
               <Text style={styles.comprovText}>Método de Pagamento: {receiptData.metodoPagamento}</Text>
+              <View style={{ marginTop: 14, alignItems: 'center', width: '100%', }}>
+
+                <Image source={require('../assets/barras.png')} style={{ maxWidth: 300, height: 40, }} />
+                <Text style={{fontSize: 15}}> {receiptData.uid}</Text>
+              </View>
             </>
           ) : (
             <Text style={styles.comprovText}>Nenhum comprovante disponível.</Text>
           )}
-          <TouchableOpacity style={styles.button} title="Fechar" onPress={() => setReceiptModalVisible(false)}>
+          <TouchableOpacity style={styles.buttonFecharCompr}  onPress={() => setReceiptModalVisible(false)}>
             <Text style={styles.buttonText}>Fechar</Text>
           </TouchableOpacity>
         </View>
@@ -323,11 +364,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: {width: 2, height: 5},
-    shadowOpacity: 10,
-    shadowRadius: 4,
-    elevation: 3,
     width: 300,
   },
   btnCarro: {
@@ -335,7 +371,7 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: '50%',
     fontSize: 19,
-    fontWeight: 600,
+    fontWeight: '600',
   },
   item: {
     color: "#000",
@@ -352,22 +388,36 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
   buttonUsePlaca: {
-    backgroundColor: "#0037a8",
+    backgroundColor: "#f28705",
     alignSelf: "center",
-    paddingTop: 10,
-    paddingLeft: 20,
-    paddingBottom: 10,
-    paddingRight: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 4,
-    marginTop: 25,
+    marginTop: 10,
+    width: '90%',
+  },
+  buttonComprovante: {
+    backgroundColor: "#f28705",
+    alignSelf: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 4,
+    marginVertical: 10,
     width: '90%',
   },
   buttonText: {
-    backgroundColor:'#000',
     color: "#fff",
     paddingLeft: 8,
     paddingRight: 8,
     textAlign: 'center',
+  },
+  buttonTextCalcular: {
+    color: "#fff",
+    paddingLeft: 8,
+    paddingRight: 8,
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '600',
   },
   buttonEdit: {
     backgroundColor: "#000",
@@ -391,19 +441,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 35,
     alignItems: "baseline",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+  },
+  modalHoras: {
+    flex: 1,
+    alignItems: 'center',
+    margin: 20,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 35,
+    alignItems: "center",
+    width: '100%',
+    height: '100%',
   },
   comprovText: {
-    marginTop: 15,
-  },  
-  comprovTitulo :{
+    marginTop: 7,
+  },
+  comprovTitulo: {
     fontSize: 20,
     color: '#261419',
     marginBottom: 20,
@@ -412,28 +465,67 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   modalText: {
+    marginBottom: 20,
+    marginTop: 15,
+    textAlign: "center",
+    fontSize: 23,
+    fontWeight: '600',
+    color: '#f28705',
+  },
+  modalPalavra: {
+    marginBottom: 5,
+    fontSize: 16,
+    color: '#000',
+  },
+  modalTextHoras: {
     marginBottom: 15,
     marginTop: 15,
     textAlign: "center",
+    fontSize: 20,
+    color: '#f28705',
   },
   hourControl: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: 'space-between',
+    width: '60%',
     marginVertical: 16,
   },
   hourButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#fff",
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
+    width: '10',
+    height: '50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonTextHour: {
+    fontSize: 30,
+    color: '#000',
+    paddingBottom: 5,
   },
   hourDisplay: {
     marginHorizontal: 20,
-    fontSize: 24,
+    fontSize: 26,
+    backgroundColor: '#fff',
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    paddingTop: 7,
+    textAlign: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   result: {
     marginTop: 16,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  resultTotal: {
+    padding: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   paymentOptions: {
     marginTop: 20,
@@ -445,17 +537,22 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginVertical: 5,
     alignItems: 'center',
+    width: 90,
+    height: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   paymentButtonText: {
     fontSize: 16,
   },
   selectedPayment: {
-    backgroundColor: '#007BFF',
-    color: '#FFF',
+    backgroundColor: '#f26705',
+    color: '#fff',
   },
   placa: {
-    width: 200,
-    height: 55,
+    width: '90%',
+    height: 60,
     alignItems: 'center',
     borderColor: '#000',
     borderWidth: 2,
@@ -465,47 +562,121 @@ const styles = StyleSheet.create({
   placaCima: {
     backgroundColor: '#0037a8',
     width: '100%',
-    paddingTop: 2,
-    paddingRight: 3,
-    paddingLeft: 3,
-    paddingBottom: 2,
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    marginBottom: 2,
     alignItems: 'center',
     justifyContent: 'space-between',
     color: 'white',
     display: 'flex',
     flexDirection: 'row',
-
+    height: 25,
   },
   bandeira: {
     width: 30,
     height: 20,
     borderRadius: 2,
   },
+  barras: {
+    width: 300,
+    borderRadius: 2,
+  },
   boxBotaoPlaca: {
     display: 'flex',
     flexDirection: 'row',
+    width: '90%',
+    justifyContent: 'space-between',
   },
   buttonFrontDell: {
     backgroundColor: "#c20e0e",
     alignSelf: "center",
-    paddingTop: 10,
-    paddingLeft: 20,
-    paddingBottom: 10,
-    paddingRight: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 4,
     marginTop: 25,
-    marginRight: 25,
-    width: '40%',
+    width: '45%',
+    height: 40,
   },
   buttonFrontEdit: {
-    backgroundColor: "#f28705",
+    backgroundColor: "#8c8c8c",
     alignSelf: "center",
-    paddingTop: 10,
-    paddingLeft: 20,
-    paddingBottom: 10,
-    paddingRight: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 4,
     marginTop: 25,
-    width: '40%',
-  }
+    width: '45%',
+    height: 40,
+  },
+  buttonConfirmar: {
+    backgroundColor: "#f28705",
+    marginHorizontal: 8,
+    borderRadius: 4,
+    padding: 10,
+    paddingVertical: 10,
+    width: '60%',
+    marginTop: 20,
+  },
+  buttonFechar: {
+    backgroundColor: "#f28705",
+    marginHorizontal: 8,
+    borderRadius: 4,
+    padding: 10,
+    paddingVertical: 10,
+    width: '60%',
+    marginTop: 60,
+  },
+  buttonFecharCompr: {
+    backgroundColor: "#f28705",
+    borderRadius: 4,
+    padding: 10,
+    paddingVertical: 10,
+    width: '100%',
+    marginTop: 20,
+  },
+  buttonFecharRevisao: {
+    backgroundColor: "#f28705",
+    borderRadius: 4,
+    padding: 10,
+    paddingVertical: 10,
+    width: '100%',
+  },
+  buttonComprar: {
+    backgroundColor: "#229a00",
+    marginHorizontal: 8,
+    borderRadius: 4,
+    padding: 10,
+    paddingVertical: 10,
+    width: '60%',
+    marginTop: 20,
+  },
+  boxResult: {
+    backgroundColor: "#fff",
+    marginHorizontal: 8,
+    borderRadius: 4,
+    width: '60%',
+    marginTop: 20,
+    justifyContent: 'center',
+    textAlign: 'center',
+    alignItems: 'center',
+  },
+  buttonPagamento: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  confirmButtonPagamento: {
+    backgroundColor: '#4CAF50', // Verde
+  },
+  closeButtonPagamento: {
+    backgroundColor: '#f44336', // Vermelho
+  },
+  disabledButtonPagamento: {
+    backgroundColor: '#c1c1c1', // Cinza
+  },
+  buttonTextPagamento: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });

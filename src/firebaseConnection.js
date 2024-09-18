@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import * as SecureStore from 'expo-secure-store';
+import { getAuth } from 'firebase/auth';  // Importa apenas getAuth
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlJQODT8nbeycOADSDK81Sjy0l92_zvi8",
@@ -19,9 +19,7 @@ const app = initializeApp(firebaseConfig);
 // Inicializa o Firestore
 const db = getFirestore(app);
 
-// Inicializa o Auth com Expo SecureStore para persistência
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(SecureStore)
-});
+// Inicializa o Auth sem configuração específica de persistência
+const auth = getAuth(app);
 
 export { db, auth };
