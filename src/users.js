@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
   },
   modalHoras: {
     flex: 1,
+    paddingTop: '30%',
     alignItems: 'center',
-    margin: 20,
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
     padding: 35,
