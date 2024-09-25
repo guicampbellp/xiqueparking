@@ -7,6 +7,7 @@ import { UsersList } from './users';
 import { Picker } from '@react-native-picker/picker';
 import CheckBox from 'expo-checkbox';
 import axios from 'axios';
+import Carregar from './Carregar';
 
 export function FormUsers() {
   const [modelo, setModelo] = useState("");
@@ -387,16 +388,12 @@ export function FormUsers() {
         <>
           <View style={styles.boxUsuario}>
             <View>
-              <Text style={{ marginLeft: 8, fontSize: 17, color: "#000" }}>Olá</Text>
-              <Text style={{ marginLeft: 8, fontSize: 24, color: "#f28705", fontWeight: '600' }}>
-                Usuário
-              </Text>
-            </View>
-            <Image source={require('../assets/logo.png')} style={{ width: 70, height: 70 }} />
-            <View style={styles.logoutContainer}>
               <TouchableOpacity style={styles.buttonLogout} onPress={handleLogout}>
                 <Text style={styles.buttonText}>Sair</Text>
               </TouchableOpacity>
+            </View>
+            <View style={styles.logoutContainer}>
+              <Carregar onStartPress={() => setLoading(true)} />
             </View>
           </View>
 
@@ -580,6 +577,7 @@ const styles = StyleSheet.create({
   },
   buttonLogout: {
     backgroundColor: "#dc3545",
+    marginTop: -20,
     borderRadius: 4,
     padding: 10,
   },
@@ -600,8 +598,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   formContainer: {
-    zIndex: 3,
-    marginTop: -20,
+    zIndex: 10,
     width: '100%',
     backgroundColor: "#f9f9f9",
     padding: 20,
@@ -613,18 +610,18 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: '#f28705',
+    textAlign: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
     position: 'absolute',
-    paddingBottom: 7,
     bottom: 20,
     zIndex: 1,
     right: 15,
   },
   buttonMaisText: {
+    marginTop: '-1%',
     fontSize: 40,
-    fontWeight: '600',
     color: '#fff',
+    paddingBottom: '20',
   },
   buttonFechar: {
     backgroundColor: "#8c8c8c",
@@ -664,6 +661,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: '10%',
     marginBottom: '10%',
   },
   cxHistoricoFrase: {
